@@ -57,4 +57,6 @@ Este programa fue creado por
 
 #### [Jorge Caballeros](https://github.com/JorgeCab2711). :octocat:
 
+#### [Eduardo Ramirez](https://github.com/eduardordev). :octocat:
+
 
