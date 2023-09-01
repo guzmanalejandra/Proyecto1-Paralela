@@ -53,8 +53,8 @@ Función principal que ejecuta el programa.
 ## Autores
 Este programa fue creado por
 
-[Alejandra Guzman](https://github.com/guzmanalejandra).
+#### [Alejandra Guzman](https://github.com/guzmanalejandra).
 
-[Jorge Caballeros](https://github.com/JorgeCab2711).
+#### [Jorge Caballeros](https://github.com/JorgeCab2711).
 
 
