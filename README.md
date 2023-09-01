@@ -49,3 +49,10 @@ Función principal que ejecuta el programa.
 - `argv`: Arreglo de cadenas de caracteres que contienen los argumentos.
 - El programa genera una simulación de protector de pantalla con círculos rebotando y colisionando.
 - Acepta el número de círculos como argumento de línea de comandos.
+
+## Autores
+Este programa fue creado por
+[Alejandra Guzman](https://github.com/guzmanalejandra).
+[Jorge Caballeros](https://github.com/JorgeCab2711).
+
+
