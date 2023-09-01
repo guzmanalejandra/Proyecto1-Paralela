@@ -24,23 +24,28 @@ Antes de poder compilar y ejecutar el programa, debes tener instalado lo siguien
 
 ## Funciones y Estructuras
 
-struct Circle
+### `struct Circle`
+
 Estructura que representa un círculo en la pantalla.
 
-float x, y: Coordenadas del centro del círculo.
-float dx, dy: Componentes de velocidad en las direcciones X e Y.
-float radius: Radio del círculo.
-SDL_Color color: Color del círculo.
-bool areColliding(const Circle& a, const Circle& b)
+- `float x, y`: Coordenadas del centro del círculo.
+- `float dx, dy`: Componentes de velocidad en las direcciones X e Y.
+- `float radius`: Radio del círculo.
+- `SDL_Color color`: Color del círculo.
+
+### `bool areColliding(const Circle& a, const Circle& b)`
+
 Función que verifica si dos círculos están colisionando.
 
-a: Primer círculo.
-b: Segundo círculo.
-Retorna true si los círculos están colisionando; de lo contrario, retorna false.
-int main(int argc, char* argv[])
+- `a`: Primer círculo.
+- `b`: Segundo círculo.
+- Retorna `true` si los círculos están colisionando; de lo contrario, retorna `false`.
+
+### `int main(int argc, char* argv[])`
+
 Función principal que ejecuta el programa.
 
-argc: Número de argumentos pasados al programa.
-argv: Arreglo de cadenas de caracteres que contienen los argumentos.
-El programa genera una simulación de protector de pantalla con círculos rebotando y colisionando.
-Acepta el número de círculos como argumento de línea de comandos.
+- `argc`: Número de argumentos pasados al programa.
+- `argv`: Arreglo de cadenas de caracteres que contienen los argumentos.
+- El programa genera una simulación de protector de pantalla con círculos rebotando y colisionando.
+- Acepta el número de círculos como argumento de línea de comandos.
