@@ -30,6 +30,23 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    std::string arg = argv[1];
+
+    // Verificar que N sea un número mayor a 2 y no contenga letras
+    for (char c : arg) {
+        if (!std::isdigit(c)) {
+            std::cout << "Por favor, introduzca un valor numérico para N." << std::endl;
+            return 1;
+        }
+    }
+
+    int N = std::stoi(arg);
+
+    // Verificar que N sea mayor a 2
+    if (N <= 2) {
+        std::cout << "Por favor, introduzca un valor mayor a 2 para N." << std::endl;
+        return 1;
+    }
     int N = std::stoi(argv[1]);
 
     // Inicializar SDL
