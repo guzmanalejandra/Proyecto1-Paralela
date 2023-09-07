@@ -3,13 +3,14 @@
 #include <vector>
 #include <ctime>
 #include <cmath>
+#include <omp.h>
 
 const int WIDTH = 640;
 const int HEIGHT = 480;
-const float DAMPING = 0.8;  // Factor de atenuación al rebotar contra los bordes
-const float SPEED_INCREASE = 1.1; // Factor para aumentar la velocidad al colisionar con otros círculos
-const float MAX_SPEED = 5.0f;  // Velocidad máxima para un círculo
-const float MIN_SPEED = 1.0f;  // Velocidad mínima para un círculo
+const float DAMPING = 0.8;
+const float SPEED_INCREASE = 1.1;
+const float MAX_SPEED = 5.0f;
+const float MIN_SPEED = 1.0f;
 
 struct Circle {
     float x, y;
@@ -23,16 +24,47 @@ bool areColliding(const Circle& a, const Circle& b) {
     return distance < (a.radius + b.radius);
 }
 
+void SDL_RenderFillCircle(SDL_Renderer* renderer, int centerX, int centerY, int radius) {
+    int x = radius - 1;
+    int y = 0;
+    int tx = 1;
+    int ty = 1;
+    int diameter = radius * 2;
+    int error = tx - diameter;
+
+    while (x >= y) {
+        // Dibuja cada punto de la circunferencia
+        for (int currentX = -x; currentX <= x; currentX++) {
+            SDL_RenderDrawPoint(renderer, centerX + currentX, centerY - y);
+            SDL_RenderDrawPoint(renderer, centerX + currentX, centerY + y);
+        }
+        for (int currentY = -y; currentY <= y; currentY++) {
+            SDL_RenderDrawPoint(renderer, centerX + x, centerY + currentY);
+            SDL_RenderDrawPoint(renderer, centerX - x, centerY + currentY);
+        }
+
+        if (error <= 0) {
+            y++;
+            error += ty;
+            ty += 2;
+        }
+
+        if (error > 0) {
+            x--;
+            tx += 2;
+            error += (tx - diameter);
+        }
+    }
+}
+
+
 int main(int argc, char* argv[]) {
-    // Verificar que se proporciona el número de círculos como argumento
     if (argc < 2) {
         std::cout << "Por favor, introduzca un valor para N." << std::endl;
         return 1;
     }
 
     std::string arg = argv[1];
-
-    // Verificar que N sea un número mayor a 2 y no contenga letras
     for (char c : arg) {
         if (!std::isdigit(c)) {
             std::cout << "Por favor, introduzca un valor numérico para N." << std::endl;
@@ -41,15 +73,11 @@ int main(int argc, char* argv[]) {
     }
 
     int N = std::stoi(arg);
-
-    // Verificar que N sea mayor a 2
     if (N <= 2) {
         std::cout << "Por favor, introduzca un valor mayor a 2 para N." << std::endl;
         return 1;
     }
-    
 
-    // Inicializar SDL
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window* window = SDL_CreateWindow("Screensaver", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -57,7 +85,6 @@ int main(int argc, char* argv[]) {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     std::vector<Circle> circles;
 
-    // Generar N círculos con propiedades aleatorias
     for (int i = 0; i < N; ++i) {
         Circle circle;
         circle.radius = std::rand() % 50 + 10;
@@ -69,7 +96,7 @@ int main(int argc, char* argv[]) {
         circles.push_back(circle);
     }
 
-    //Bucle Principal
+    double sequentialTime, parallelTime;
     bool running = true;
     SDL_Event event;
     Uint32 startTick, frameTime, accumulatedTime = 0;
@@ -78,18 +105,16 @@ int main(int argc, char* argv[]) {
     while (running) {
         startTick = SDL_GetTicks();
 
-        // Manejar eventos
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
             }
         }
 
-        // Limpiar el renderer 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
 
-        // Mover cada círculo y detectar colisiones
+        sequentialTime = omp_get_wtime();
         for (Circle& circle : circles) {
             circle.x += circle.dx;
             circle.y += circle.dy;
@@ -148,29 +173,75 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+        sequentialTime = omp_get_wtime() - sequentialTime;
+
+        parallelTime = omp_get_wtime();
+        #pragma omp parallel for
+        for (int i = 0; i < circles.size(); i++) {
+            Circle& circle = circles[i];
+
+            // Movimiento
+            circle.x += circle.dx;
+            circle.y += circle.dy;
+
+            // Rebote en los bordes
+            if (circle.x - circle.radius < 0 || circle.x + circle.radius > WIDTH) {
+                circle.dx = -circle.dx;
+                circle.x += circle.dx;
+            }
+            if (circle.y - circle.radius < 0 || circle.y + circle.radius > HEIGHT) {
+                circle.dy = -circle.dy;
+                circle.y += circle.dy;
+            }
+
+            // Detección de colisión con otros círculos
+            for (int j = 0; j < circles.size(); j++) {
+                if (i != j) {
+                    Circle& other = circles[j];
+                    if (areColliding(circle, other)) {
+                        // Cambia las direcciones si colisionan
+                        circle.dx = -circle.dx;
+                        circle.dy = -circle.dy;
+                        other.dx = -other.dx;
+                        other.dy = -other.dy;
+                        
+                        // Desplaza un poco para evitar que queden "pegados"
+                        circle.x += circle.dx;
+                        circle.y += circle.dy;
+                        other.x += other.dx;
+                        other.y += other.dy;
+                    }
+                }
+            }
+
+            // Dibuja el círculo
+            SDL_SetRenderDrawColor(renderer, circle.color.r, circle.color.g, circle.color.b, circle.color.a);
+            SDL_RenderFillCircle(renderer, circle.x, circle.y, circle.radius);
+        }
+
+        parallelTime = omp_get_wtime() - parallelTime;
 
         SDL_RenderPresent(renderer);
 
         frameTime = SDL_GetTicks() - startTick;
-
         accumulatedTime += frameTime;
         frameCount++;
 
-	
         if (accumulatedTime >= 1000) {
             float fps = static_cast<float>(frameCount) / (accumulatedTime / 1000.0f);
             std::cout << "FPS: " << fps << std::endl;
+            std::cout << "Tiempo secuencial: " << sequentialTime << " segundos" << std::endl;
+            std::cout << "Tiempo paralelo: " << parallelTime << " segundos" << std::endl;
+            std::cout << "Speed-up: " << sequentialTime / parallelTime << std::endl;
             accumulatedTime = 0;
             frameCount = 0;
         }
 
-        // Mantener el framerate en 60 FPS
         if (frameTime < 1000 / 60) {
             SDL_Delay(1000 / 60 - frameTime);
         }
     }
 
-    //Liberar recursos
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
